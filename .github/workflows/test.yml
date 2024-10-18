@@ -14,4 +14,4 @@ jobs:
     steps:
     - uses: actions/checkout@v4
     - name: Run tests
-      run: dotnet test /p:EnableWindowsTargeting=true LibOrbisPkg.sln
+      run: dotnet test /p:EnableWindowsTargeting=true OrbisPkg/OrbisPkg.sln

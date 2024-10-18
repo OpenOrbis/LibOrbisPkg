@@ -1,0 +1,48 @@
+﻿
+Microsoft Visual Studio Solution File, Format Version 12.00
+# Visual Studio Version 17
+VisualStudioVersion = 17.11.35222.181
+MinimumVisualStudioVersion = 10.0.40219.1
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "OrbisPkg.Lib", "OrbisPkg.Lib\OrbisPkg.Lib.csproj", "{1920F4D1-0202-434C-A92B-4163E2F88FE5}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "OrbisPkg.Cli", "OrbisPkg.Cli\OrbisPkg.Cli.csproj", "{F5D8B11C-75DE-4CA1-9820-D81093C0BA69}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "OrbisPkg.UI", "OrbisPkg.UI\OrbisPkg.UI.csproj", "{028F313B-B9ED-4FA7-A2FE-C9D30A06E9CF}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "OrbisPkg.Tests", "OrbisPkg.Tests\OrbisPkg.Tests.csproj", "{449C24C7-6253-4356-A487-A826B42C4EFB}"
+EndProject
+Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Solution Items", "Solution Items", "{F1E95D20-7B2E-45A7-8FB8-85041CD509E1}"
+	ProjectSection(SolutionItems) = preProject
+		..\.github\workflows\test.yml = ..\.github\workflows\test.yml
+	EndProjectSection
+EndProject
+Global
+	GlobalSection(SolutionConfigurationPlatforms) = preSolution
+		Debug|Any CPU = Debug|Any CPU
+		Release|Any CPU = Release|Any CPU
+	EndGlobalSection
+	GlobalSection(ProjectConfigurationPlatforms) = postSolution
+		{1920F4D1-0202-434C-A92B-4163E2F88FE5}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{1920F4D1-0202-434C-A92B-4163E2F88FE5}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{1920F4D1-0202-434C-A92B-4163E2F88FE5}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{1920F4D1-0202-434C-A92B-4163E2F88FE5}.Release|Any CPU.Build.0 = Release|Any CPU
+		{F5D8B11C-75DE-4CA1-9820-D81093C0BA69}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{F5D8B11C-75DE-4CA1-9820-D81093C0BA69}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{F5D8B11C-75DE-4CA1-9820-D81093C0BA69}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{F5D8B11C-75DE-4CA1-9820-D81093C0BA69}.Release|Any CPU.Build.0 = Release|Any CPU
+		{028F313B-B9ED-4FA7-A2FE-C9D30A06E9CF}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{028F313B-B9ED-4FA7-A2FE-C9D30A06E9CF}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{028F313B-B9ED-4FA7-A2FE-C9D30A06E9CF}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{028F313B-B9ED-4FA7-A2FE-C9D30A06E9CF}.Release|Any CPU.Build.0 = Release|Any CPU
+		{449C24C7-6253-4356-A487-A826B42C4EFB}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{449C24C7-6253-4356-A487-A826B42C4EFB}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{449C24C7-6253-4356-A487-A826B42C4EFB}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{449C24C7-6253-4356-A487-A826B42C4EFB}.Release|Any CPU.Build.0 = Release|Any CPU
+	EndGlobalSection
+	GlobalSection(SolutionProperties) = preSolution
+		HideSolutionNode = FALSE
+	EndGlobalSection
+	GlobalSection(ExtensibilityGlobals) = postSolution
+		SolutionGuid = {3026D6B5-59AF-44E7-AFC4-0B35C4DEB919}
+	EndGlobalSection
+EndGlobal

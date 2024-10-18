@@ -35,12 +35,12 @@
       this.contextMenuStrip1 = new System.Windows.Forms.ContextMenuStrip(this.components);
       this.extractToolStripMenuItem = new System.Windows.Forms.ToolStripMenuItem();
       this.extractCompressedPFSCToolStripMenuItem = new System.Windows.Forms.ToolStripMenuItem();
-      this.imageList1 = new System.Windows.Forms.ImageList(this.components);
+      //this.imageList1 = new System.Windows.Forms.ImageList(this.components);
       this.currentFolderListView = new System.Windows.Forms.ListView();
       this.columnHeader1 = ((System.Windows.Forms.ColumnHeader)(new System.Windows.Forms.ColumnHeader()));
       this.columnHeader2 = ((System.Windows.Forms.ColumnHeader)(new System.Windows.Forms.ColumnHeader()));
       this.columnHeader3 = ((System.Windows.Forms.ColumnHeader)(new System.Windows.Forms.ColumnHeader()));
-      this.imageList2 = new System.Windows.Forms.ImageList(this.components);
+      //this.imageList2 = new System.Windows.Forms.ImageList(this.components);
       ((System.ComponentModel.ISupportInitialize)(this.splitContainer1)).BeginInit();
       this.splitContainer1.Panel1.SuspendLayout();
       this.splitContainer1.Panel2.SuspendLayout();
@@ -73,7 +73,7 @@
       this.directoryTreeView.Dock = System.Windows.Forms.DockStyle.Fill;
       this.directoryTreeView.HideSelection = false;
       this.directoryTreeView.ImageIndex = 1;
-      this.directoryTreeView.ImageList = this.imageList1;
+      //this.directoryTreeView.ImageList = this.imageList1;
       this.directoryTreeView.Location = new System.Drawing.Point(0, 0);
       this.directoryTreeView.Margin = new System.Windows.Forms.Padding(4);
       this.directoryTreeView.Name = "directoryTreeView";
@@ -110,10 +110,10 @@
       // 
       // imageList1
       // 
-      this.imageList1.ImageStream = ((System.Windows.Forms.ImageListStreamer)(resources.GetObject("imageList1.ImageStream")));
-      this.imageList1.TransparentColor = System.Drawing.Color.Transparent;
-      this.imageList1.Images.SetKeyName(0, "File_small.png");
-      this.imageList1.Images.SetKeyName(1, "Folder_small.png");
+      //this.imageList1.ImageStream = ((System.Windows.Forms.ImageListStreamer)(resources.GetObject("imageList1.ImageStream")));
+      //this.imageList1.TransparentColor = System.Drawing.Color.Transparent;
+      //this.imageList1.Images.SetKeyName(0, "File_small.png");
+      //this.imageList1.Images.SetKeyName(1, "Folder_small.png");
       // 
       // currentFolderListView
       // 
@@ -124,12 +124,12 @@
       this.currentFolderListView.ContextMenuStrip = this.contextMenuStrip1;
       this.currentFolderListView.Dock = System.Windows.Forms.DockStyle.Fill;
       this.currentFolderListView.HideSelection = false;
-      this.currentFolderListView.LargeImageList = this.imageList2;
+      //this.currentFolderListView.LargeImageList = this.imageList2;
       this.currentFolderListView.Location = new System.Drawing.Point(0, 0);
       this.currentFolderListView.Margin = new System.Windows.Forms.Padding(4);
       this.currentFolderListView.Name = "currentFolderListView";
       this.currentFolderListView.Size = new System.Drawing.Size(530, 470);
-      this.currentFolderListView.SmallImageList = this.imageList1;
+      //this.currentFolderListView.SmallImageList = this.imageList1;
       this.currentFolderListView.TabIndex = 0;
       this.currentFolderListView.UseCompatibleStateImageBehavior = false;
       this.currentFolderListView.View = System.Windows.Forms.View.Details;
@@ -150,10 +150,10 @@
       // 
       // imageList2
       // 
-      this.imageList2.ImageStream = ((System.Windows.Forms.ImageListStreamer)(resources.GetObject("imageList2.ImageStream")));
-      this.imageList2.TransparentColor = System.Drawing.Color.Transparent;
-      this.imageList2.Images.SetKeyName(0, "File_large.png");
-      this.imageList2.Images.SetKeyName(1, "Folder_large.png");
+      //this.imageList2.ImageStream = ((System.Windows.Forms.ImageListStreamer)(resources.GetObject("imageList2.ImageStream")));
+      //this.imageList2.TransparentColor = System.Drawing.Color.Transparent;
+      //this.imageList2.Images.SetKeyName(0, "File_large.png");
+      //this.imageList2.Images.SetKeyName(1, "Folder_large.png");
       // 
       // FileView
       // 
@@ -177,8 +177,8 @@
     private System.Windows.Forms.SplitContainer splitContainer1;
     private System.Windows.Forms.TreeView directoryTreeView;
     private System.Windows.Forms.ListView currentFolderListView;
-    private System.Windows.Forms.ImageList imageList1;
-    private System.Windows.Forms.ImageList imageList2;
+    //private System.Windows.Forms.ImageList imageList1;
+    //private System.Windows.Forms.ImageList imageList2;
     private System.Windows.Forms.ColumnHeader columnHeader1;
     private System.Windows.Forms.ColumnHeader columnHeader2;
     private System.Windows.Forms.ContextMenuStrip contextMenuStrip1;
