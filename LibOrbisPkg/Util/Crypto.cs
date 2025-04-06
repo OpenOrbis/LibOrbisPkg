@@ -63,11 +63,12 @@ namespace LibOrbisPkg.Util
         P = keyset.Prime1,
         Q = keyset.Prime2
       };
+
       using(var rsa = RSA.Create())
       {
         rsa.KeySize = 2048;
         rsa.ImportParameters(@params);
-        return rsa.DecryptValue(eekpfs);
+        return rsa.Decrypt(eekpfs, RSAEncryptionPadding.Pkcs1); //rsa.DecryptValue(eekpfs);
       }
     }
 
