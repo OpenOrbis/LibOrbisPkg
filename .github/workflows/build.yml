@@ -24,6 +24,6 @@ jobs:
       - name: Display dotnet version
         run: dotnet --version
       - name: Install Dependencies
-        run: dotnet restore
+        run: dotnet restore LibOrbisPkg.Core.sln
       - name: Build
         run: dotnet build --configuration Release LibOrbisPkg.Core.sln
