@@ -27,3 +27,9 @@ jobs:
         run: dotnet restore LibOrbisPkg.Core.sln
       - name: Build
         run: dotnet build --configuration Release LibOrbisPkg.Core.sln
+      - name: Upload Artifacts
+        uses: actions/upload-artifact@main
+        with:
+          path: |
+            PkgTool.Core/bin/**
+            LibOrbisPkg.Core/bin/**
