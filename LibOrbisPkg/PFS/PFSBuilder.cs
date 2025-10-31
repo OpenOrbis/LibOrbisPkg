@@ -97,7 +97,22 @@ namespace LibOrbisPkg.PFS
 
       Log("Setting up filesystem structure...");
       allDirs = properties.root.GetAllChildrenDirs();
-      allFiles = properties.root.GetAllChildrenFiles().Where(f => f.Parent?.name != "sce_sys" || !PKG.EntryNames.NameToId.ContainsKey(f.name)).ToList();
+      allFiles = properties.root.GetAllChildrenFiles().Where((f) => {
+        bool is_sce_sys = false;
+        var name = f.name;
+        var parent = f.Parent;
+        while (parent != null && parent != properties.root)
+        {
+          if (parent.Parent == properties.root && parent.name == "sce_sys")
+          {
+            is_sce_sys = true;
+            break;
+          }
+          name = parent.name + "/" + name;
+          parent = parent.Parent;
+        }
+        return !is_sce_sys || !PKG.EntryNames.NameToId.ContainsKey(name);
+      }).ToList();
       allNodes = new List<FSNode>(allDirs.OrderBy(d => d.FullPath()).ToList());
       allNodes.AddRange(allFiles);
 

@@ -376,10 +376,16 @@ namespace LibOrbisPkg.PKG
         pkg.ParamSfo,
         pkg.PsReservedDat
       });
-      foreach(var file in project.RootDir.Dirs.Where(f => f.name == "sce_sys").First().Files.Where(f => EntryNames.NameToId.ContainsKey(f.name)))
+      foreach(var file in project.RootDir.Dirs.Where(f => f.name == "sce_sys").First().GetAllChildrenFiles())
       {
         var name = file.name;
-        if (name == "param.sfo") continue;
+        var parent = file.Parent;
+        while (parent != null && parent != project.RootDir && parent.name != "sce_sys")
+        {
+          name = parent.name + "/" + name;
+          parent = parent.Parent;
+        }
+        if (!EntryNames.NameToId.ContainsKey(name) || name == "param.sfo") continue;
         var entry = new FileEntry(EntryNames.NameToId[name], file.Write, (uint)file.Size);
         pkg.Entries.Add(entry);
       }
