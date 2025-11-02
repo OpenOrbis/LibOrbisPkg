@@ -44,7 +44,7 @@ namespace PkgEditor.Views
           passcode = new PasscodeEntry("Please enter tweak key", 32);
           passcode.Text = "PFS is encrypted";
           passcode.ShowDialog();
-          data = passcode.Passcode.FromHexCompact();
+          tweak = passcode.Passcode.FromHexCompact();
           reader = new PfsReader(va, data: data, tweak: tweak);
         }
         else
