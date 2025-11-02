@@ -309,8 +309,6 @@ namespace LibOrbisPkg.PKG
       pkg.Metas = new MetasEntry();
       pkg.Digests = new GenericEntry(EntryId.DIGESTS);
       pkg.EntryNames = new NameTableEntry();
-      pkg.LicenseDat = GenLicense();
-      pkg.LicenseInfo = new GenericEntry(EntryId.LICENSE_INFO) { FileData = GenLicenseInfo() };
       var paramSfoFile = project.RootDir.GetFile("sce_sys/param.sfo");
       if(paramSfoFile == null)
       {
@@ -369,10 +367,18 @@ namespace LibOrbisPkg.PKG
           pkg.ChunkXml
         });
       }
+      if (volType != GP4.VolumeType.pkg_ps4_patch)
+      {
+        pkg.LicenseDat = GenLicense();
+        pkg.LicenseInfo = new GenericEntry(EntryId.LICENSE_INFO) { FileData = GenLicenseInfo() };
+        pkg.Entries.AddRange(new Entry[]
+        {
+          pkg.LicenseDat,
+          pkg.LicenseInfo,
+        });
+      }
       pkg.Entries.AddRange(new Entry[]
-      { 
-        pkg.LicenseDat,
-        pkg.LicenseInfo,
+      {
         pkg.ParamSfo,
         pkg.PsReservedDat
       });
@@ -499,11 +505,9 @@ namespace LibOrbisPkg.PKG
       switch (t)
       {
         case GP4.VolumeType.pkg_ps4_app:
-          return ContentType.GD;
         case GP4.VolumeType.pkg_ps4_patch:
-          return ContentType.DP;
         case GP4.VolumeType.pkg_ps4_remaster:
-          return ContentType.DP;
+          return ContentType.GD;
         case GP4.VolumeType.pkg_ps4_ac_data:
         case GP4.VolumeType.pkg_ps4_sf_theme:
         case GP4.VolumeType.pkg_ps4_theme:
@@ -525,6 +529,8 @@ namespace LibOrbisPkg.PKG
         case GP4.VolumeType.pkg_ps4_theme:
           return ContentFlags.GD_AC;
         case GP4.VolumeType.pkg_ps4_patch:
+          // TODO
+          return ContentFlags.PATCHGO | ContentFlags.GD_AC | ContentFlags.CUMULATIVE_PATCH;
         case GP4.VolumeType.pkg_ps4_remaster:
           // TODO
           return ContentFlags.SUBSEQUENT_PATCH;
