@@ -93,6 +93,8 @@ namespace LibOrbisPkg.GP4
       {
         case VolumeType.pkg_ps4_app:
           break;
+        case VolumeType.pkg_ps4_patch:
+          break;
         case VolumeType.pkg_ps4_ac_data:
           break;
         case VolumeType.pkg_ps4_ac_nodata:

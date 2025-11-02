@@ -73,6 +73,10 @@ namespace PkgEditor.Views
           pkgTypeDropdown.SelectedIndex = 2;
           entitlementKeyTextbox.Enabled = true;
           break;
+        case VolumeType.pkg_ps4_patch:
+          pkgTypeDropdown.SelectedIndex = 3;
+          entitlementKeyTextbox.Enabled = false;
+          break;
         default:
           break;
       }
@@ -242,7 +246,10 @@ namespace PkgEditor.Views
       var ofd = new SaveFileDialog();
       ofd.Filter = "PKG Image|*.pkg";
       ofd.Title = "Choose output path for PKG";
-      ofd.FileName = proj.volume.Package.ContentId + ".pkg";
+      if (proj.volume.Type == VolumeType.pkg_ps4_patch || proj.volume.Type == VolumeType.pkg_ps4_remaster)
+        ofd.FileName = proj.volume.Package.ContentId + "-patch.pkg"; // TODO: version from PARAM.SFO
+      else
+        ofd.FileName = proj.volume.Package.ContentId + ".pkg";
       if (ofd.ShowDialog() == DialogResult.OK)
       {
         var logBox = new LogWindow();
@@ -251,12 +258,13 @@ namespace PkgEditor.Views
         Action<string> LogLine = x => logBox.BeginInvoke(new Action(() => writer.WriteLine(x)));
         try
         {
-          await Task.Run(() => {
+          await Task.Run(() =>
+          {
             new PkgBuilder(PkgProperties.FromGp4(proj, Path.GetDirectoryName(path))).Write(ofd.FileName, LogLine);
             LogLine($"Saved to {ofd.FileName}");
           });
         }
-        catch(Exception ex)
+        catch (Exception ex)
         {
           writer.WriteLine("Error: " + ex);
           writer.WriteLine(ex.StackTrace);
