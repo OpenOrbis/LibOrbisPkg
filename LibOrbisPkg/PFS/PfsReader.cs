@@ -65,25 +65,27 @@ namespace LibOrbisPkg.PFS
     /// </summary>
     public class File : Node
     {
+      public InodeFlags flags;
+      public int blockSize;
       public int[] blocks;
       private IMemoryReader reader;
       public File(IMemoryReader r) { reader = r; }
       public IMemoryReader GetView()
       {
         if (blocks != null)
-          return new ChunkedMemoryReader(reader, 0x10000, blocks);
+          return new ChunkedMemoryReader(reader, blockSize, blocks);
         return new MemoryAccessor(reader, offset);
       }
       public void Save(string path, bool decompress = false)
       {
-        var buf = new byte[0x10000];
+        var buf = new byte[blockSize];
         using (var file = System.IO.File.OpenWrite(path))
         {
           var sz = size;
           file.SetLength(sz);
           long pos = 0;
           var reader = GetView();
-          if (decompress && size != compressed_size)
+          if (decompress && flags.HasFlag(InodeFlags.compressed))
           {
             sz = compressed_size;
             reader = new PFSCReader(reader);
@@ -157,9 +159,11 @@ namespace LibOrbisPkg.PFS
       var maxPerSector = hdr.BlockSize / dinodeSize;
       sectorBuf = new byte[hdr.BlockSize];
       sectorStream = new MemoryStream(sectorBuf);
+      // skip over indirect blocks, block signatures are never checked anyway
+      var dinodeStartPos = hdr.BlockSize + (hdr.BlockSize * hdr.InodeBlockSig.IndirectBlocks.Where(b => b > 0).Count());
       for (var i = 0; i < hdr.DinodeBlockCount; i++)
       {
-        var position = hdr.BlockSize + hdr.BlockSize * i;
+        var position = dinodeStartPos + (hdr.BlockSize * i);
         reader.Read(position, sectorBuf, 0, sectorBuf.Length);
         sectorStream.Position = 0;
         for (var j = 0; j < maxPerSector && total < hdr.DinodeCount; j++)
@@ -297,6 +301,8 @@ namespace LibOrbisPkg.PFS
         compressed_size = dinodes[dinode].SizeCompressed,
         ino = dinode,
         blocks = blocks,
+        flags = dinodes[dinode].Flags,
+        blockSize = (int)hdr.BlockSize
       };
     }
   }
