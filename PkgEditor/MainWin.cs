@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.ComponentModel;
+using System.Threading.Tasks;
 using System.Data;
 using System.Drawing;
 using System.Linq;
@@ -9,8 +10,10 @@ using System.IO;
 using LibOrbisPkg;
 using System.Windows.Forms;
 using System.Diagnostics;
+using LibOrbisPkg.GP4;
 using LibOrbisPkg.PKG;
 using LibOrbisPkg.PFS;
+using LibOrbisPkg.Util;
 
 namespace PkgEditor
 {
@@ -321,6 +324,89 @@ namespace PkgEditor
           File.SetCreationTimeUtc(filename, creationTime);
           File.SetLastWriteTimeUtc(filename, modifiedTime);
         }
+      }
+    }
+
+    private static FSDir makeRoot(Pkg pkg, Stream pkgFile)
+    {
+      FSDir fsDir1 = new FSDir();
+      FSDir fsDir2 = new FSDir();
+      fsDir2.name = "sce_sys";
+      fsDir2.Parent = fsDir1;
+      FSDir fsDir3 = fsDir2;
+      List<FSFile> files = fsDir3.Files;
+      FSFile fsFile1 = new FSFile((Action<Stream>)(s => pkg.ParamSfo.Write(s)), "param.sfo", (long)pkg.ParamSfo.Length);
+      fsFile1.Parent = fsDir3;
+      files.Add(fsFile1);
+      MetaEntry icon0 = pkg.Metas.Metas.Where<MetaEntry>((Func<MetaEntry, bool>)(e => e.id == EntryId.ICON0_PNG)).First<MetaEntry>();
+      FSFile[] fsFileArray = new FSFile[1]
+      {
+        new FSFile((Action<Stream>) (s => new SubStream(pkgFile, (long) icon0.DataOffset, (long) icon0.DataSize).CopyTo(s)), "icon0.png", (long) icon0.DataSize)
+      };
+      foreach (FSFile fsFile2 in fsFileArray)
+      {
+        fsDir3.Files.Add(fsFile2);
+        fsFile2.Parent = fsDir3;
+      }
+      fsDir1.Dirs.Add(fsDir3);
+      return fsDir1;
+    }
+
+    private Task convertSinglePkg(TextWriter writer, string filename)
+    {
+      return Task.Run((Action)(() =>
+      {
+        using (FileStream fileStream = System.IO.File.OpenRead(filename))
+        {
+          Pkg pkg = new PkgReader((Stream)fileStream).ReadPkg();
+          using (FileStream s = System.IO.File.Create(filename.Substring(0, filename.Length - 4) + "_fake.pkg"))
+            new PkgBuilder(new PkgProperties()
+            {
+              ContentId = pkg.Header.content_id,
+              CreationDate = new DateTime(),
+              UseCreationTime = true,
+              EntitlementKey = "00000000000000000000000000000000",
+              Passcode = "00000000000000000000000000000000",
+              TimeStamp = new DateTime(),
+              VolumeType = VolumeType.pkg_ps4_ac_data,
+              RootDir = MainWin.makeRoot(pkg, (Stream)fileStream)
+            }).Write((Stream)s);
+        }
+      }));
+    }
+
+    private async void createACFKPGsToolStripMenuItem_Click(object sender, EventArgs e)
+    {
+      FolderBrowserDialog folderBrowserDialog = new FolderBrowserDialog();
+      folderBrowserDialog.Description = "Select Folder Containing DLC Packages";
+
+      if (folderBrowserDialog.ShowDialog() == DialogResult.OK)
+      {
+        LogWindow logWindow = new LogWindow();
+        TextWriter writer = logWindow.GetWriter();
+        logWindow.Show();
+
+        string folderPath = folderBrowserDialog.SelectedPath;
+        string[] pkgFiles = Directory.GetFiles(folderPath, "*.pkg", SearchOption.AllDirectories);
+
+        foreach (string pkgFileName in pkgFiles)
+        {
+          try
+          {
+            writer.WriteLine("Creating FPKG for " + pkgFileName + "...");
+            await this.convertSinglePkg(writer, pkgFileName);
+          }
+          catch (Exception ex)
+          {
+            writer.WriteLine("Error processing " + pkgFileName + ":");
+            writer.WriteLine(ex.Message);
+            writer.WriteLine(ex.StackTrace);
+            break;  // Break on the first error
+          }
+        }
+
+        writer.WriteLine("Done!");
+        writer = null;
       }
     }
   }

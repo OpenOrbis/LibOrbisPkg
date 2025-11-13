@@ -48,6 +48,7 @@
       this.toolStripSeparator1 = new System.Windows.Forms.ToolStripSeparator();
       this.aboutToolStripMenuItem = new System.Windows.Forms.ToolStripMenuItem();
       this.setPKGPFSFileMetadataToolStripMenuItem = new System.Windows.Forms.ToolStripMenuItem();
+      this.createACFKPGsToolStripMenuItem = new System.Windows.Forms.ToolStripMenuItem();
       this.menuStrip.SuspendLayout();
       this.SuspendLayout();
       // 
@@ -157,7 +158,8 @@
       this.toolsToolStripMenuItem.DropDownItems.AddRange(new System.Windows.Forms.ToolStripItem[] {
             this.combinePKGPartsToolStripMenuItem,
             this.cryptoDebuggerToolStripMenuItem,
-            this.setPKGPFSFileMetadataToolStripMenuItem});
+            this.setPKGPFSFileMetadataToolStripMenuItem,
+            this.createACFKPGsToolStripMenuItem});
       this.toolsToolStripMenuItem.Name = "toolsToolStripMenuItem";
       this.toolsToolStripMenuItem.Size = new System.Drawing.Size(46, 20);
       this.toolsToolStripMenuItem.Text = "&Tools";
@@ -204,6 +206,13 @@
       this.aboutToolStripMenuItem.Size = new System.Drawing.Size(167, 22);
       this.aboutToolStripMenuItem.Text = "&About...";
       this.aboutToolStripMenuItem.Click += new System.EventHandler(this.aboutToolStripMenuItem_Click);
+      // 
+      // createACFKPGsToolStripMenuItem
+      // 
+      this.createACFKPGsToolStripMenuItem.Name = "createACFKPGsToolStripMenuItem";
+      this.createACFKPGsToolStripMenuItem.Size = new System.Drawing.Size(210, 22);
+      this.createACFKPGsToolStripMenuItem.Text = "Create AC FKPGs";
+      this.createACFKPGsToolStripMenuItem.Click += new System.EventHandler(this.createACFKPGsToolStripMenuItem_Click);
       // 
       // setPKGPFSFileMetadataToolStripMenuItem
       // 
@@ -255,6 +264,7 @@
     private System.Windows.Forms.ToolStripMenuItem visitGitHubRepoToolStripMenuItem;
     private System.Windows.Forms.ToolStripSeparator toolStripSeparator1;
     private System.Windows.Forms.ToolStripMenuItem setPKGPFSFileMetadataToolStripMenuItem;
+    private System.Windows.Forms.ToolStripMenuItem createACFKPGsToolStripMenuItem;
   }
 }
 
