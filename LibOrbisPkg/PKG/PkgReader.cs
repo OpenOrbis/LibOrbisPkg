@@ -82,6 +82,14 @@ namespace LibOrbisPkg.PKG
             }
             catch (Exception) { }
             break;
+          case EntryId.PARAM_JSON:
+            s.Position = entry.DataOffset;
+            pkg.ParamJson = new GenericEntry(EntryId.PARAM_JSON)
+            {
+              FileData = s.ReadBytes((int)entry.DataSize),
+              meta = entry,
+            };
+            break;
         }
       }
       return pkg;

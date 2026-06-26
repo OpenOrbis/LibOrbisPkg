@@ -35,6 +35,9 @@ namespace LibOrbisPkg.PKG
     public GenericEntry ChunkSha;
     public GenericEntry ChunkXml;
 
+    // prospero
+    public GenericEntry ParamJson;
+
     public List<Entry> Entries;
 
     // Constants

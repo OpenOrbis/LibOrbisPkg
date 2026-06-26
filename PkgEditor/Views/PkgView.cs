@@ -15,6 +15,7 @@ using System.Threading.Tasks;
 using System.IO.MemoryMappedFiles;
 using LibOrbisPkg.PFS;
 using LibOrbisPkg.SFO;
+using System.Text.Json.Nodes;
 
 namespace PkgEditor.Views
 {
@@ -44,8 +45,16 @@ namespace PkgEditor.Views
         pkg = new PkgReader(s).ReadPkg();
       try
       {
-        using (var s = pkgFile.CreateViewStream((long)pkg.Header.pfs_image_offset, (long)pkg.Header.pfs_image_size, MemoryMappedFileAccess.Read))
-          ObjectPreview(PfsHeader.ReadFromStream(s), pfsHeaderTreeView);
+        // we can't currently read PFS out of prospero packages
+        if (pkg.Header.content_type < ContentType.PS5GD)
+        {
+          using (var s = pkgFile.CreateViewStream((long)pkg.Header.pfs_image_offset, (long)pkg.Header.pfs_image_size, MemoryMappedFileAccess.Read))
+            ObjectPreview(PfsHeader.ReadFromStream(s), pfsHeaderTreeView);
+        }
+      }
+      catch (UnauthorizedAccessException)
+      {
+        MessageBox.Show("This PKG file is likely incomplete! Please use the 'Combine PKG parts' tool first.");
       }
       catch (Exception e)
       {
@@ -60,23 +69,50 @@ namespace PkgEditor.Views
         }
       }
       contentIdTextBox.Text = pkg.Header.content_id;
-      titleTextBox.Text = pkg.ParamSfo.ParamSfo["TITLE"]?.ToString();
-      sizeLabel.Text = FileView.HumanReadableFileSize((long)pkg.Header.package_size);
-      var category = pkg.ParamSfo.ParamSfo["CATEGORY"].ToString();
-      typeLabel.Text = SfoData.SfoTypes.Where(x => x.Category == category).FirstOrDefault() is SfoType t ? t.Description : "Unknown";
-      versionLabel.Text = pkg.ParamSfo.ParamSfo["VERSION"]?.ToString();
-      if (pkg.ParamSfo.ParamSfo["APP_VER"] is Utf8Value v)
+      // PS4 uses PARAM.SFO, prospero uses param.json
+      if (pkg.Header.content_type < ContentType.PS5GD)
       {
-        appVerLabel.Text = v.Value;
-      }
-      else
+        titleTextBox.Text = pkg.ParamSfo.ParamSfo["TITLE"]?.ToString();
+        sizeLabel.Text = FileView.HumanReadableFileSize((long)pkg.Header.package_size);
+        var category = pkg.ParamSfo.ParamSfo["CATEGORY"].ToString();
+        typeLabel.Text = SfoData.SfoTypes.Where(x => x.Category == category).FirstOrDefault() is SfoType t ? t.Description : "Unknown";
+        versionLabel.Text = pkg.ParamSfo.ParamSfo["VERSION"]?.ToString();
+        if (pkg.ParamSfo.ParamSfo["APP_VER"] is Utf8Value v)
+        {
+          appVerLabel.Text = v.Value;
+        }
+        else
+        {
+          appVerLabelLabel.Visible = false;
+          appVerLabel.Visible = false;
+        }
+        var sfoEditor = new SFOView(pkg.ParamSfo.ParamSfo, true);
+        sfoEditor.Dock = DockStyle.Fill;
+        tabPage1.Controls.Add(sfoEditor);
+      } else if (pkg.ParamJson != null)
       {
-        appVerLabelLabel.Visible = false;
-        appVerLabel.Visible = false;
+        string jsonStr = Encoding.UTF8.GetString(pkg.ParamJson.FileData);
+        JsonNode paramData = JsonNode.Parse(jsonStr);
+        string defaultLanguage = (string)paramData["localizedParameters"]["defaultLanguage"];
+        // TODO: how do we get category
+        titleTextBox.Text = (string)paramData["localizedParameters"][defaultLanguage]["titleName"];
+        sizeLabel.Text = FileView.HumanReadableFileSize((long)pkg.Header.package_size);
+        versionLabel.Text = (string)paramData["contentVersion"];
+        if (paramData["masterVersion"] != null)
+        {
+          appVerLabel.Text = (string)paramData["masterVersion"];
+        } else
+        {
+          appVerLabelLabel.Visible = false;
+          appVerLabel.Visible = false;
+        }
+        // we can't do any of this for prospero content
+        button2.Visible = false; // can't export GP4
+        mainTabControl.TabPages.Remove(tabPage1); // no SFO tab
+        mainTabControl.TabPages.Remove(tabPage2); // no digests tab
+        mainTabControl.TabPages.Remove(filesTab); // no files tab
+        pkgHeaderTabControl.TabPages.Remove(outerPfsHeaderTabPage); // can't look at PFS
       }
-      var sfoEditor = new SFOView(pkg.ParamSfo.ParamSfo, true);
-      sfoEditor.Dock = DockStyle.Fill;
-      tabPage1.Controls.Add(sfoEditor);
 
 
       if (pkg.CheckPasscode("00000000000000000000000000000000"))

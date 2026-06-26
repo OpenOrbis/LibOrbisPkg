@@ -27,6 +27,14 @@ namespace LibOrbisPkg.PKG
     AL = 0x1C,
     /* pkg_ps4_delta_patch */
     DP = 0x1E,
+    /* pkg_ps5_app */
+    PS5GD = 0x20,
+    /* pkg_ps5_ac */
+    PS5AC = 0x21,
+    /* pkg_ps5_ac_nodata */
+    PS5AL = 0x22,
+    /* pkg_ps5_delta_patch */
+    PS5DP = 0x23,
   };
 
   public enum IROTag : int
@@ -682,6 +690,8 @@ namespace LibOrbisPkg.PKG
     KEYMAP_RP__30__008_PNG = 0x000017F7,
     KEYMAP_RP__30__009_PNG = 0x000017F8,
     KEYMAP_RP__30__010_PNG = 0x000017F9,
+    // prospero
+    PARAM_JSON = 0x00002000,
   };
   public static class EntryNames
   {
