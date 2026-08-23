@@ -266,7 +266,8 @@
       this.pkgTypeDropdown.Items.AddRange(new object[] {
             "Game Package",
             "Additional Content",
-            "Additional Content w/ No Data"});
+            "Additional Content w/ No Data",
+            "Game Patch Package"});
       this.pkgTypeDropdown.Location = new System.Drawing.Point(284, 16);
       this.pkgTypeDropdown.Name = "pkgTypeDropdown";
       this.pkgTypeDropdown.Size = new System.Drawing.Size(186, 21);
