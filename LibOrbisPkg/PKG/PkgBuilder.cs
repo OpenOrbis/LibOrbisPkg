@@ -433,13 +433,23 @@ namespace LibOrbisPkg.PKG
         }
         if(entry == pkg.ChunkSha)
         {
-          // Estimate size of PKG without the ChunkSHA
-          long pkgSize = Align(
-            (long)pkg.Header.body_offset + pkg.Entries.Sum(x => Align(x.Length, 16)),
-            0x80000) + pfsSize;
-          // Add the size of the chunk SHAs, plus an extra 16 bytes for good measure
-          pkgSize += ((pkgSize + 16) / 0x10000) * 4;
-          e.DataSize = (uint)(pkgSize / 0x10000L) * 4;
+          // The chunk hash table holds 4 bytes per 64 KiB of the final package, but it also
+          // lives in the body, so growing it can push the body over the next 0x80000 boundary
+          // and add more chunks. Iterate to a fixed point instead of a one-shot estimate.
+          // Mirror the layout below: the Metas entry is sized as Entries.Count * 32, not by its
+          // current Length, and the ChunkSha entry itself is what we are solving for.
+          long body = (long)pkg.Header.body_offset
+            + pkg.Entries.Where(x => x != pkg.Metas && x != pkg.ChunkSha).Sum(x => Align(x.Length, 16))
+            + Align(pkg.Entries.Count * 32L, 16);
+          long shaSize = 0;
+          while (true)
+          {
+            long pkgSize = Align(body + Align(shaSize, 16), 0x80000) + pfsSize;
+            long needed = pkgSize / 0x10000L * 4;
+            if (needed <= shaSize) break;
+            shaSize = needed;
+          }
+          e.DataSize = (uint)shaSize;
         }
 
         dataOffset = Align(dataOffset + e.DataSize, 16);
