@@ -87,9 +87,12 @@ namespace PkgTool
           }
           var props = PkgProperties.FromGp4(project, Path.GetDirectoryName(proj));
           var outputPath = args[2];
-          new PkgBuilder(props).Write(Path.Combine(
+          // Write through a FileStream: the memory-mapped path has been seen to drop pages
+          // (zero-filled ranges, valid signatures) on >20 GB outputs under memory pressure.
+          using (var fs = new FileStream(Path.Combine(
             outputPath,
-            $"{project.volume.Package.ContentId}.pkg"));
+            $"{project.volume.Package.ContentId}.pkg"), FileMode.Create, FileAccess.ReadWrite))
+            new PkgBuilder(props).Write(fs);
         }),
       Verb.Create(
         "pkg_makegp4",
@@ -210,7 +213,7 @@ namespace PkgTool
               while (size - wrote > buf.Length)
               {
                 const int parallelSlice = 0x100000;
-                Parallel.For(0, buf.Length / parallelSlice - 1, idx => {
+                Parallel.For(0, buf.Length / parallelSlice, idx => { // upper bound is exclusive
                   int offset = idx * parallelSlice;
                   d.Read(wrote + offset, buf, offset, parallelSlice);
                 });
