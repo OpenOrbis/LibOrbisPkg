@@ -84,7 +84,13 @@ namespace LibOrbisPkg.PFS
         using (var bufStream = new MemoryStream(sectorBuf))
         using (var ds = new DeflateStream(bufStream, CompressionMode.Decompress))
         {
-          ds.Read(output, 0, hdr.BlockSz);
+          // DeflateStream.Read may return fewer bytes than requested (.NET 6+ returns as soon as
+          // some output is available), so keep reading until the sector is full.
+          int got = 0, n;
+          while (got < hdr.BlockSz && (n = ds.Read(output, got, hdr.BlockSz - got)) > 0)
+            got += n;
+          if (got < hdr.BlockSz)
+            Array.Clear(output, got, hdr.BlockSz - got);
         }
       }
     }
