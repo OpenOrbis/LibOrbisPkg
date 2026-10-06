@@ -64,7 +64,7 @@ namespace LibOrbisPkg.PKG
       {
         var split = project.volume.Package.CreationDate.Split(' ');
         UseCreationTime = split.Length == 2; // Date and time specified
-        CreationDate = DateTime.Parse(project.volume.Package.CreationDate).ToUniversalTime();
+        CreationDate = GP4.Gp4Project.ParseUtc(project.volume.Package.CreationDate);
       }
       return new PkgProperties
       {

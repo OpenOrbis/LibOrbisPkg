@@ -325,15 +325,15 @@ namespace LibOrbisPkg.PKG
         string date = "", time = "";
         if(project.CreationDate == default)
         {
-          date = "c_date=" + DateTime.UtcNow.ToString("yyyyMMdd");
+          date = "c_date=" + DateTime.UtcNow.ToString("yyyyMMdd", System.Globalization.CultureInfo.InvariantCulture);
           if (project.UseCreationTime)
-            time = ",c_time=" + DateTime.UtcNow.ToString("HHmmss");
+            time = ",c_time=" + DateTime.UtcNow.ToString("HHmmss", System.Globalization.CultureInfo.InvariantCulture);
         }
         else
         {
-          date = "c_date=" + project.CreationDate.ToString("yyyyMMdd");
+          date = "c_date=" + project.CreationDate.ToString("yyyyMMdd", System.Globalization.CultureInfo.InvariantCulture);
           if (project.UseCreationTime)
-            time = ",c_time=" + project.CreationDate.ToString("HHmmss");
+            time = ",c_time=" + project.CreationDate.ToString("HHmmss", System.Globalization.CultureInfo.InvariantCulture);
         }
         var sizeInfo = pkg.Header.content_type != ContentType.AL ? $",img0_l0_size={(pkg.Header.package_size + 0xFFFFF) / (1024 * 1024)}" +
           $",img0_l1_size=0" +

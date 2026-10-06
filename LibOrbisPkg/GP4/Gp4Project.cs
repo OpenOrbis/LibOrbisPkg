@@ -85,6 +85,14 @@ namespace LibOrbisPkg.GP4
     /// </summary>
     /// <param name="type">The type of project to make</param>
     /// <returns>A new blank project with defaults for the given VolumeType</returns>
+    /// <summary>
+    /// GP4 timestamps carry no zone and are UTC. Parsing them as local time shifted every
+    /// date/time by the machine's offset (c_date lost a day east of UTC).
+    /// </summary>
+    public static DateTime ParseUtc(string s) =>
+      DateTime.Parse(s, System.Globalization.CultureInfo.InvariantCulture,
+        System.Globalization.DateTimeStyles.AssumeUniversal | System.Globalization.DateTimeStyles.AdjustToUniversal);
+
     public static Gp4Project Create(VolumeType type)
     {
       var proj = new Gp4Project
@@ -289,7 +297,7 @@ namespace LibOrbisPkg.GP4
     [XmlIgnore]
     public DateTime TimeStamp
     {
-      get => DateTime.Parse(volume_ts).ToUniversalTime();
+      get => Gp4Project.ParseUtc(volume_ts);
       set => volume_ts = value.ToString("s").Replace('T', ' ');
     }
     [XmlElement(ElementName = "package")]
@@ -365,7 +373,7 @@ namespace LibOrbisPkg.GP4
     [XmlIgnore]
     public DateTime CreationTimeStamp
     {
-      get => DateTime.Parse(CreationDate).ToUniversalTime();
+      get => Gp4Project.ParseUtc(CreationDate);
     }
   }
 
