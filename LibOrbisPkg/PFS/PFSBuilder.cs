@@ -480,13 +480,16 @@ namespace LibOrbisPkg.PFS
         hdr.Ndblock += super_root_ino.Blocks;
 
         // flat path table
-        fpt_ino.SetDirectBlock(0, (int)hdr.Ndblock++);
+        // Like regular files in an unsigned image: db[0] = start, the rest of the run is -1
+        // (retail convention; PfsReader rejected explicit block lists). Reserve every block,
+        // not just the first 12, so a large table cannot overlap the next file.
+        fpt_ino.SetDirectBlock(0, (int)hdr.Ndblock);
         fpt_ino.Size = fpt.Size;
         fpt_ino.SizeCompressed = fpt.Size;
         fpt_ino.Blocks = (uint)CeilDiv(fpt.Size, hdr.BlockSize);
-
         for (int i = 1; i < fpt_ino.Blocks && i < 12; i++)
-          fpt_ino.SetDirectBlock(i, (int)hdr.Ndblock++);
+          fpt_ino.SetDirectBlock(i, -1);
+        hdr.Ndblock += Math.Max(1, fpt_ino.Blocks);
 
         // DATs I've found include an empty block after the FPT if there's no collision resolver
         if(cr_ino == null)
@@ -496,13 +499,13 @@ namespace LibOrbisPkg.PFS
         else
         {
           // collision resolver
-          cr_ino.SetDirectBlock(0, (int)hdr.Ndblock++);
+          cr_ino.SetDirectBlock(0, (int)hdr.Ndblock);
           cr_ino.Size = colResolver.Size;
           cr_ino.SizeCompressed = colResolver.Size;
           cr_ino.Blocks = (uint)CeilDiv(colResolver.Size, hdr.BlockSize);
-
           for (int i = 1; i < cr_ino.Blocks && i < 12; i++)
-            cr_ino.SetDirectBlock(i, (int)hdr.Ndblock++);
+            cr_ino.SetDirectBlock(i, -1);
+          hdr.Ndblock += Math.Max(1, cr_ino.Blocks);
         }
 
         // Calculate length of all dirent blocks
