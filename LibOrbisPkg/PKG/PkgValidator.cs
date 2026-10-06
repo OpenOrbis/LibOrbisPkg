@@ -196,7 +196,9 @@ namespace LibOrbisPkg.PKG
           Validate = () =>
             CheckHashes(
               digests.FileData.Skip(32 * j).Take(32).ToArray(),
-              Crypto.Sha256(pkgStream, meta.DataOffset, meta.DataSize)),
+              // Encrypted entries are stored and hashed padded to 16 bytes (AES-CBC); DataSize
+              // is the plaintext length. Hashing DataSize flagged e.g. a 0x214-byte npbind.dat.
+              Crypto.Sha256(pkgStream, meta.DataOffset, meta.Encrypted ? (meta.DataSize + 15) & ~15u : meta.DataSize)),
         });
       }
 
