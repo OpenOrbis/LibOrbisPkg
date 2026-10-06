@@ -8,8 +8,23 @@ on:
 
 jobs:
   test:
-
     runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        # GP4 dates and PUBTOOLINFO broke only off UTC and under non-Gregorian calendars,
+        # which a single UTC/en-US runner never exercises.
+        include:
+          - { tz: UTC,                 lang: en_US.UTF-8 }
+          - { tz: Asia/Tokyo,          lang: en_US.UTF-8 }
+          - { tz: America/Los_Angeles, lang: en_US.UTF-8 }
+          - { tz: Europe/Istanbul,     lang: tr_TR.UTF-8 }
+          - { tz: Asia/Riyadh,         lang: ar_SA.UTF-8 }
+    name: test (${{ matrix.tz }}, ${{ matrix.lang }})
+    env:
+      TZ: ${{ matrix.tz }}
+      LANG: ${{ matrix.lang }}
+      LC_ALL: ${{ matrix.lang }}
 
     steps:
     - uses: actions/checkout@v4
