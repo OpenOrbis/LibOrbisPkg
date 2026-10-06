@@ -66,6 +66,25 @@ namespace LibOrbisPkg.GP4
       }
       return null;
     }
+    private static ValidateResult checkCaseOnlyDuplicates(Gp4Project proj, string dir)
+    {
+      // PFS path lookup is case-insensitive (the flat path table hashes upper-cased paths), so
+      // "a.xxx" and "A.XXX" are the same file on the console and which one it opens is undefined.
+      var clashes = proj.files.Items
+        .Select(f => f.TargetPath)
+        .Distinct()
+        .GroupBy(p => p.ToUpperInvariant())
+        .Where(g => g.Count() > 1)
+        .Select(g => string.Join(" / ", g))
+        .ToList();
+      if (clashes.Count > 0)
+      {
+        return ValidateResult.Warning(
+          $"{clashes.Count} path(s) differ only by case and are the same file on the console: "
+          + string.Join(", ", clashes.Take(5)) + (clashes.Count > 5 ? ", ..." : ""));
+      }
+      return null;
+    }
     private static ValidateResult checkContentIdFormat(Gp4Project proj, string dir)
     {
       var pkgContentId = proj.volume.Package.ContentId;
@@ -108,6 +127,7 @@ namespace LibOrbisPkg.GP4
       checkPasscode,
       checkAllFilesExist,
       checkDuplicateFilenames,
+      checkCaseOnlyDuplicates,
       checkContentIdLength,
       checkContentIdFormat,
       checkPkgVolumeType,
