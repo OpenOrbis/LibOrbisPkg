@@ -437,7 +437,7 @@ namespace LibOrbisPkg.PKG
       ret.set_digests = (GeneralDigest)s.ReadUInt32BE();
       for(var d = GeneralDigest.ContentDigest; (int)d < 1 << 15; d = (GeneralDigest)((int)d << 1))
       {
-        s.Read(ret.Digests[d], 0, 32);
+        s.ReadFull(ret.Digests[d], 0, 32);
       }
       return ret;
     }

@@ -73,7 +73,7 @@ namespace LibOrbisPkg.PKG
             {
               var licenseDatBytes = new byte[entry.DataSize];
               s.Position = entry.DataOffset;
-              s.Read(licenseDatBytes, 0, (int)entry.DataSize);
+              s.ReadFull(licenseDatBytes, 0, (int)entry.DataSize);
               using (var ms = new System.IO.MemoryStream(Entry.Decrypt(licenseDatBytes, pkg, entry)))
               {
                 pkg.LicenseDat = new Rif.LicenseDatReader(ms).Read();

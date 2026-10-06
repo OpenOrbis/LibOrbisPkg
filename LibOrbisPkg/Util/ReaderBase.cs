@@ -69,7 +69,7 @@ namespace LibOrbisPkg.Util
     protected byte[] ReadBytes(int count)
     {
       var ret = new byte[count];
-      s.Read(ret, 0, count);
+      s.ReadFull(ret, 0, count);
       return ret;
     }
   }

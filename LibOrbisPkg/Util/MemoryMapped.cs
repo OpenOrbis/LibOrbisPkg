@@ -205,7 +205,7 @@ namespace LibOrbisPkg.Util
     public void Read(long pos, byte[] buf, int offset, int count)
     {
       stream.Position = pos + startOffset;
-      stream.Read(buf, offset, count);
+      stream.ReadFull(buf, offset, count);
     }
   }
   public class StreamWrapper : Stream

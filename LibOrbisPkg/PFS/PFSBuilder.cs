@@ -249,6 +249,12 @@ namespace LibOrbisPkg.PFS
     /// </summary>
     public void WriteImage(Stream stream)
     {
+      // Size the image up front like the memory-mapped path does, so signing and XTS see the
+      // zero padding after the last file instead of hitting end-of-stream (the reused sector
+      // buffer then encrypted stale bytes into the final sector).
+      var start = stream.Position;
+      if (stream.CanSeek && stream.Length < start + CalculatePfsSize())
+        stream.SetLength(start + CalculatePfsSize());
       WriteData(stream);
 
       if (hdr.Mode.HasFlag(PfsMode.Signed))
@@ -259,7 +265,7 @@ namespace LibOrbisPkg.PFS
         {
           var sig_buffer = new byte[sig.Size];
           stream.Position = sig.Block * properties.BlockSize;
-          stream.Read(sig_buffer, 0, sig.Size);
+          stream.ReadFull(sig_buffer, 0, sig.Size);
           stream.Position = sig.SigOffset;
           stream.Write(Crypto.HmacSha256(signKey, sig_buffer), 0, 32);
           stream.WriteLE((int)sig.Block);
@@ -275,7 +281,7 @@ namespace LibOrbisPkg.PFS
         foreach (var xtsSector in XtsSectorGen())
         {
           stream.Position = xtsSector * xtsSectorSize;
-          stream.Read(sectorBuffer, 0, xtsSectorSize);
+          stream.ReadFull(sectorBuffer, 0, xtsSectorSize);
           transformer.EncryptSector(sectorBuffer, (ulong)xtsSector);
           stream.Position = xtsSector * xtsSectorSize;
           stream.Write(sectorBuffer, 0, xtsSectorSize);
