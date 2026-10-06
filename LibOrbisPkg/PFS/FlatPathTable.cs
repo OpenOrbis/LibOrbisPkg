@@ -109,7 +109,9 @@ namespace LibOrbisPkg.PFS
     {
       uint hash = 0;
       foreach (var c in name)
-        hash = char.ToUpper(c) + (31 * hash);
+        // Culture-invariant: with e.g. tr-TR, ToUpper('i') is U+0130 and the table no longer
+        // matches what the console computes for the same path.
+        hash = char.ToUpperInvariant(c) + (31 * hash);
       return hash;
     }
   }
