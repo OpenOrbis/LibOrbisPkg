@@ -560,8 +560,18 @@ namespace PkgTool
     private static void ExtractInParallel(PfsReader inner, string outPath, bool verbose)
     {
       Console.WriteLine("Extracting in parallel...");
+      // Pre-create every directory on a single thread: concurrent
+      // Directory.CreateDirectory calls on the same path can fail with
+      // "Access to the path ... is denied" on Windows.
+      var allFiles = inner.GetAllFiles().ToList();
+      foreach (var pf in allFiles)
+      {
+        var p = Path.Combine(outPath, pf.FullName.Replace('/', Path.DirectorySeparatorChar).Substring(1));
+        var d = p.Substring(0, p.LastIndexOf(Path.DirectorySeparatorChar));
+        if (!Directory.Exists(d)) Directory.CreateDirectory(d);
+      }
       Parallel.ForEach(
-        inner.GetAllFiles(),
+        allFiles,
         () => new byte[0x10000],
         (f, _, buf) =>
         {
