@@ -27,8 +27,9 @@ namespace LibOrbisPkg.PFS
     /// <returns></returns>
     public static PfsProperties MakeInnerPFSProps(PKG.PkgProperties props)
     {
-      // Generate keystone for GP PKGs if it is not already there
-      if(props.VolumeType == GP4.VolumeType.pkg_ps4_app && props.RootDir.GetFile("sce_sys/keystone") == null)
+      // Generate keystone for GP PKGs (applications and their patches) if it is not already there
+      var isApp = props.VolumeType == GP4.VolumeType.pkg_ps4_app || props.VolumeType == GP4.VolumeType.pkg_ps4_patch;
+      if(isApp && props.RootDir.GetFile("sce_sys/keystone") == null)
       {
         AddFile(props.RootDir, "sce_sys", "keystone", Util.Crypto.CreateKeystone(props.Passcode));
       }
@@ -38,7 +39,7 @@ namespace LibOrbisPkg.PFS
         root = props.RootDir,
         BlockSize = 0x10000,
         // Hack: allocate a minimum of 5.5MiB of blocks for GP
-        MinBlocks = props.VolumeType == GP4.VolumeType.pkg_ps4_app ? 0x55u : 0,
+        MinBlocks = isApp ? 0x55u : 0,
         Encrypt = false,
         Sign = false,
         FileTime = GetTimeStamp(props),

@@ -54,8 +54,8 @@ Verbs:
   pfs_extract [--verbose] <input.dat> <output_directory>
     Extracts all the files from a PFS image to the given output directory. Use the verbose flag to print filenames as they are extracted.
 
-  pkg_build <input_project.gp4> <output_directory>
-    Builds a fake PKG from the given GP4 project in the given output directory.
+  pkg_build [--base <...>] <input_project.gp4> <output_directory>
+    Builds a fake PKG from the given GP4 project in the given output directory. For a patch project (pkg_ps4_patch), --base names the application package that the patch applies to (instead of app_path in the project); the patch is written as <content_id>-patch.pkg.
 
   pkg_extract [--verbose] [--passcode <...>] <input.pkg> <output_directory>
     Extracts all the files from a PKG to the given output directory. Use the verbose flag to print filenames as they are extracted.
@@ -75,8 +75,8 @@ Verbs:
   pkg_makegp4 [--passcode <...>] <input.pkg> <output_dir>
     Extracts all content from the PKG and creates a GP4 project in the output directory
 
-  pkg_validate [--verbose] <input.pkg>
-    Checks the hashes and signatures of a PKG.
+  pkg_validate [--verbose] [--base <...>] <input.pkg>
+    Checks the hashes and signatures of a PKG. For a patch, --base names the application package that the patch should apply to, to check the patch's origin digests against it.
 
   sfo_deleteentry <param.sfo> <entry_name>
     Deletes the named entry from the SFO file.
@@ -90,6 +90,18 @@ Verbs:
   sfo_setentry [--value <...>] [--type <...>] [--maxsize <...>] [--name <...>] <param.sfo> <entry_name>
     Creates or modifies the named entry in the given SFO file.
  ```
+
+### Patch packages
+A `pkg_ps4_patch` project builds a cumulative patch of one application package, which you name with
+`app_path` on the project's `package` element (relative to the project) or with `pkg_build --base`:
+
+```xml
+<package content_id="..." passcode="..." storage_type="digital50" app_type="full" app_path="IV0000-ABCD12345_00-0123456789ABCDEF.pkg"/>
+```
+
+The patch installs only over that exact package: it carries the application's `playgo-chunk.dat` and its
+Content Digest and Game Digest, which the console checks. Its param.sfo keeps the application's CONTENT_ID and
+VERSION, has a higher APP_VER, and CATEGORY `gp` (`gpe` for a `gde` application).
 
 ## Thanks
 Everyone who helped, either directly or indirectly, but especially the following:

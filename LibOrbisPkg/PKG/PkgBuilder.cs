@@ -19,11 +19,27 @@ namespace LibOrbisPkg.PKG
     private PFS.PfsBuilder innerPfs;
     private PFS.PfsBuilder outerPfs;
     private Pkg pkg;
+    private PatchBase patchBase;
 
     public PkgBuilder(PkgProperties proj)
     {
       project = proj;
       EKPFS = Crypto.ComputeKeys(project.ContentId, project.Passcode, 1);
+      if (project.VolumeType == GP4.VolumeType.pkg_ps4_patch)
+      {
+        // Read the base package now, before the output file is created.
+        if (string.IsNullOrEmpty(project.BasePackage))
+        {
+          throw new Exception("A patch package needs the application package it applies to " +
+            "(app_path on the GP4 project's package element).");
+        }
+        patchBase = PatchBase.Read(project.BasePackage);
+        var problem = patchBase.CheckCanPatch(project.ContentId);
+        if (problem != null)
+        {
+          throw new Exception($"Cannot build a patch of {project.BasePackage}: {problem}");
+        }
+      }
     }
 
     /// <summary>
@@ -123,6 +139,12 @@ namespace LibOrbisPkg.PKG
 
       foreach(var a in pkg.CalcGeneralDigests())
         pkg.GeneralDigests.Set(a.Key, a.Value);
+      if (patchBase != null)
+      {
+        // The console checks these against the installed application when it installs the patch.
+        pkg.GeneralDigests.Set(GeneralDigest.OriginDigest, patchBase.ContentDigest);
+        pkg.GeneralDigests.Set(GeneralDigest.OriginGameDigest, patchBase.GameDigest);
+      }
 
       // Write body now because it will make calculating hashes easier.
       var writer = new PkgWriter(pkgStream);
@@ -263,7 +285,7 @@ namespace LibOrbisPkg.PKG
         content_id = project.ContentId,
         drm_type = DrmType.PS4,
         content_type = VolTypeToContentType(volType),
-        content_flags = ContentFlags.Unk_x8000000 | VolTypeToContentFlags(volType),
+        content_flags = VolTypeToContentFlags(volType),
         // TODO
         promote_size = 0,
         version_date = 0x20161020,
@@ -306,6 +328,11 @@ namespace LibOrbisPkg.PKG
         FileData = Crypto.RSA2048EncryptKey(RSAKeyset.FakeKeyset.Modulus, EKPFS)
       };
       pkg.GeneralDigests = new GeneralDigestsEntry();
+      if (patchBase != null)
+      {
+        // Patches use the larger general digests entry, which has room for the origin digests.
+        pkg.GeneralDigests.type = 0x101;
+      }
       pkg.Metas = new MetasEntry();
       pkg.Digests = new GenericEntry(EntryId.DIGESTS);
       pkg.EntryNames = new NameTableEntry();
@@ -366,6 +393,14 @@ namespace LibOrbisPkg.PKG
           pkg.ChunkSha,
           pkg.ChunkXml
         });
+        if (patchBase != null)
+        {
+          // A patch carries its base package's playgo-chunk.dat as app/playgo-chunk.dat.
+          pkg.Entries.Add(new GenericEntry(EntryId.APP__PLAYGO_CHUNK_DAT, "app/playgo-chunk.dat")
+          {
+            FileData = patchBase.PlaygoChunkDat
+          });
+        }
       }
       if (volType != GP4.VolumeType.pkg_ps4_patch)
       {
@@ -392,6 +427,8 @@ namespace LibOrbisPkg.PKG
           parent = parent.Parent;
         }
         if (!EntryNames.NameToId.ContainsKey(name) || name == "param.sfo") continue;
+        // A patch's app/playgo-chunk.dat comes from its base package, not from the project.
+        if (patchBase != null && name == "app/playgo-chunk.dat") continue;
         var entry = new FileEntry(EntryNames.NameToId[name], file.Write, (uint)file.Size);
         pkg.Entries.Add(entry);
       }
@@ -453,6 +490,8 @@ namespace LibOrbisPkg.PKG
       }
       ulong bodySize = dataOffset - pkg.Header.body_offset;
       pkg.Metas.Metas.Sort((e1, e2) => e1.id.CompareTo(e2.id));
+      // The entry table moves when GENERAL_DIGESTS is larger (patches)
+      pkg.Header.entry_table_offset = pkg.Metas.meta.DataOffset;
       pkg.Header.entry_count = (uint)pkg.Entries.Count;
       pkg.Header.entry_count_2 = (ushort)pkg.Entries.Count;
       pkg.Header.body_size = Align(pkg.Header.body_offset + bodySize, 0x80000) - pkg.Header.body_offset;
@@ -527,18 +566,18 @@ namespace LibOrbisPkg.PKG
         case GP4.VolumeType.pkg_ps4_ac_data:
         case GP4.VolumeType.pkg_ps4_sf_theme:
         case GP4.VolumeType.pkg_ps4_theme:
-          return ContentFlags.GD_AC;
+          return ContentFlags.Unk_x8000000 | ContentFlags.GD_AC;
         case GP4.VolumeType.pkg_ps4_patch:
-          // TODO
-          return ContentFlags.PATCHGO | ContentFlags.GD_AC | ContentFlags.CUMULATIVE_PATCH;
+          // 0x62300000, as in cumulative patches made by the official tools
+          return ContentFlags.CUMULATIVE_PATCH | ContentFlags.GD_AC | ContentFlags.PATCHGO | ContentFlags.FIRST_PATCH;
         case GP4.VolumeType.pkg_ps4_remaster:
           // TODO
-          return ContentFlags.SUBSEQUENT_PATCH;
+          return ContentFlags.Unk_x8000000 | ContentFlags.SUBSEQUENT_PATCH;
         case GP4.VolumeType.pkg_ps4_ac_nodata:
           // TODO
-          return 0;
+          return ContentFlags.Unk_x8000000;
         default:
-          return 0;
+          return ContentFlags.Unk_x8000000;
       }
     }
   }

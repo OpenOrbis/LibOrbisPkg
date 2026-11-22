@@ -1,4 +1,5 @@
 ﻿using System;
+using System.IO;
 
 namespace LibOrbisPkg.PKG
 {
@@ -47,6 +48,12 @@ namespace LibOrbisPkg.PKG
     /// </summary>
     public PFS.FSDir RootDir;
 
+    /// <summary>
+    /// For pkg_ps4_patch: the path of the application package that the patch applies to.
+    /// The patch installs only over this exact package.
+    /// </summary>
+    public string BasePackage;
+
     public static PkgProperties FromGp4(GP4.Gp4Project project, string projDir)
     {
       DateTime CreationDate;
@@ -75,7 +82,10 @@ namespace LibOrbisPkg.PKG
         EntitlementKey = project.volume.Package.EntitlementKey,
         CreationDate = CreationDate,
         UseCreationTime = UseCreationTime,
-        RootDir = PFS.PfsProperties.BuildFSTree(project, projDir)
+        RootDir = PFS.PfsProperties.BuildFSTree(project, projDir),
+        BasePackage = string.IsNullOrEmpty(project.volume.Package.AppPath)
+          ? null
+          : Path.GetFullPath(Path.Combine(projDir, project.volume.Package.AppPath)),
       };
     }
   }

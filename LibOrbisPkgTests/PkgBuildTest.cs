@@ -167,5 +167,79 @@ namespace LibOrbisPkgTests
         }
       }
     }
+
+    private static ParamSfo MakeAppSfo(string category, string appVer)
+    {
+      var sfo = ParamSfo.Deserialize(ParamSfo.DefaultGD.Serialize());
+      sfo["CATEGORY"] = new Utf8Value("CATEGORY", category, 4);
+      sfo["APP_VER"] = new Utf8Value("APP_VER", appVer, 8);
+      sfo["CONTENT_ID"] = new Utf8Value("CONTENT_ID", "UP0000-TEST00000_00-0000000000000000", 48);
+      sfo["TITLE_ID"] = new Utf8Value("TITLE_ID", "TEST00000", 12);
+      return sfo;
+    }
+
+    private static PkgProperties MakePatchProperties(string basePackage)
+    {
+      var properties = TestHelper.MakeProperties(
+        VolumeType: VolumeType.pkg_ps4_patch,
+        RootDir: TestHelper.MakeRoot(MakeAppSfo("gp", "01.01")));
+      properties.BasePackage = basePackage;
+      return properties;
+    }
+
+    /// <summary>
+    /// Tests that a cumulative patch has what the console checks, taken from its base package,
+    /// and passes all validation checks against that base.
+    /// </summary>
+    [TestMethod]
+    public void ValidatePatch()
+    {
+      using (var basePkg = new TempFile())
+      using (var patchFile = new MemoryStream())
+      {
+        new PkgBuilder(TestHelper.MakeProperties(
+          VolumeType: VolumeType.pkg_ps4_app,
+          RootDir: TestHelper.MakeRoot(MakeAppSfo("gd", "01.00")))).Write(basePkg.Path, s => { });
+        new PkgBuilder(MakePatchProperties(basePkg.Path)).Write(patchFile, s => { });
+
+        var patchBase = PatchBase.Read(basePkg.Path);
+        var pkg = new PkgReader(patchFile).ReadPkg();
+        Assert.AreEqual(ContentType.GD, pkg.Header.content_type);
+        Assert.AreEqual(0x62300000u, (uint)pkg.Header.content_flags);
+        Assert.AreEqual(0x101, pkg.GeneralDigests.type);
+        Assert.IsFalse(pkg.Metas.Metas.Any(m => m.id == EntryId.LICENSE_DAT || m.id == EntryId.LICENSE_INFO));
+        CollectionAssert.AreEqual(patchBase.ContentDigest, pkg.GeneralDigests.Digests[GeneralDigest.OriginDigest]);
+        CollectionAssert.AreEqual(patchBase.GameDigest, pkg.GeneralDigests.Digests[GeneralDigest.OriginGameDigest]);
+        var chunkDat = pkg.Metas.Metas.Single(m => m.id == EntryId.APP__PLAYGO_CHUNK_DAT);
+        var chunkDatBytes = patchFile.ToArray().Skip((int)chunkDat.DataOffset).Take((int)chunkDat.DataSize).ToArray();
+        CollectionAssert.AreEqual(patchBase.PlaygoChunkDat, chunkDatBytes);
+
+        var validations = new PkgValidator(pkg, patchBase).Validate(patchFile).ToList();
+        foreach (var v in validations)
+        {
+          Assert.IsTrue(v.Item2 == PkgValidator.ValidationResult.Ok, v.Item1.Name);
+        }
+        Assert.IsTrue(validations.Any(v => v.Item1.Name == "Origin Digest"));
+        Assert.IsTrue(validations.Any(v => v.Item1.Name == "Origin Game Digest"));
+      }
+    }
+
+    /// <summary>
+    /// Tests that a patch cannot be built without a base package, or against another patch.
+    /// </summary>
+    [TestMethod]
+    public void PatchNeedsApplicationBase()
+    {
+      Assert.ThrowsException<Exception>(() => new PkgBuilder(MakePatchProperties(null)));
+      using (var basePkg = new TempFile())
+      using (var patchPkg = new TempFile())
+      {
+        new PkgBuilder(TestHelper.MakeProperties(
+          VolumeType: VolumeType.pkg_ps4_app,
+          RootDir: TestHelper.MakeRoot(MakeAppSfo("gd", "01.00")))).Write(basePkg.Path, s => { });
+        new PkgBuilder(MakePatchProperties(basePkg.Path)).Write(patchPkg.Path, s => { });
+        Assert.ThrowsException<Exception>(() => new PkgBuilder(MakePatchProperties(patchPkg.Path)));
+      }
+    }
   }
 }
