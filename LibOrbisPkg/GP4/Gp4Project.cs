@@ -362,6 +362,12 @@ namespace LibOrbisPkg.GP4
     public string AppType;
     [XmlAttribute("c_date")]
     public string CreationDate;
+    /// <summary>
+    /// For pkg_ps4_patch: the application package that the patch applies to,
+    /// relative to the project's directory.
+    /// </summary>
+    [XmlAttribute("app_path")]
+    public string AppPath;
     [XmlIgnore]
     public DateTime CreationTimeStamp
     {

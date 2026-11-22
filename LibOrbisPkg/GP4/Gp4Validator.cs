@@ -5,6 +5,7 @@ using System.Linq;
 using System.Reflection;
 using System.Text;
 using System.Text.RegularExpressions;
+using LibOrbisPkg.PKG;
 using LibOrbisPkg.SFO;
 
 namespace LibOrbisPkg.GP4
@@ -93,6 +94,8 @@ namespace LibOrbisPkg.GP4
       {
         case VolumeType.pkg_ps4_app:
           break;
+        case VolumeType.pkg_ps4_patch:
+          break;
         case VolumeType.pkg_ps4_ac_data:
           break;
         case VolumeType.pkg_ps4_ac_nodata:
@@ -100,6 +103,55 @@ namespace LibOrbisPkg.GP4
         default:
           return ValidateResult.Fatal(
             "Unsupported PKG volume type: " + pkgType);
+      }
+      return null;
+    }
+    /// <summary>
+    /// Reads the application package that a patch project names, or returns null.
+    /// </summary>
+    private static PatchBase readPatchBase(Gp4Project proj, string dir)
+    {
+      var appPath = proj.volume.Package.AppPath;
+      if (proj.volume.Type != VolumeType.pkg_ps4_patch || string.IsNullOrEmpty(appPath))
+        return null;
+      try
+      {
+        return PatchBase.Read(Path.Combine(dir, appPath));
+      }
+      catch (Exception)
+      {
+        return null;
+      }
+    }
+    private static ValidateResult checkPatchBase(Gp4Project proj, string dir)
+    {
+      if (proj.volume.Type != VolumeType.pkg_ps4_patch)
+        return null;
+      var appPath = proj.volume.Package.AppPath;
+      if (string.IsNullOrEmpty(appPath))
+      {
+        return ValidateResult.Fatal(
+          "A patch package needs the application package it applies to: " +
+          "set app_path on the package element (or use pkg_build --base).");
+      }
+      var fullPath = Path.Combine(dir, appPath);
+      if (!File.Exists(fullPath))
+      {
+        return ValidateResult.Fatal("Could not find the patch's application package: " + fullPath);
+      }
+      PatchBase patchBase;
+      try
+      {
+        patchBase = PatchBase.Read(fullPath);
+      }
+      catch (Exception e)
+      {
+        return ValidateResult.Fatal($"Could not read the patch's application package {fullPath}: {e.Message}");
+      }
+      var problem = patchBase.CheckCanPatch(proj.volume.Package.ContentId);
+      if (problem != null)
+      {
+        return ValidateResult.Fatal($"Cannot build a patch of {fullPath}: {problem}");
       }
       return null;
     }
@@ -111,6 +163,7 @@ namespace LibOrbisPkg.GP4
       checkContentIdLength,
       checkContentIdFormat,
       checkPkgVolumeType,
+      checkPatchBase,
     };
     private static ValidateResult checkContentIdMatchesSfo(Gp4Project proj, string dir, ParamSfo sfo)
     {
@@ -145,6 +198,10 @@ namespace LibOrbisPkg.GP4
           if (!sfoCategory.StartsWith("g"))
             ok = false;
           break;
+        case VolumeType.pkg_ps4_patch:
+          if (sfoCategory != "gp" && sfoCategory != "gpe")
+            ok = false;
+          break;
         case VolumeType.pkg_ps4_ac_data:
         case VolumeType.pkg_ps4_ac_nodata:
         case VolumeType.pkg_ps4_theme:
@@ -160,11 +217,43 @@ namespace LibOrbisPkg.GP4
       }
       return null;
     }
+    private static ValidateResult checkPatchSfoMatchesBase(Gp4Project proj, string dir, ParamSfo sfo)
+    {
+      var baseSfo = readPatchBase(proj, dir)?.Pkg.ParamSfo?.ParamSfo;
+      if (baseSfo == null)
+        return null;
+      var problems = new List<string>();
+      var category = sfo["CATEGORY"]?.ToString();
+      var baseCategory = baseSfo["CATEGORY"]?.ToString();
+      var expectedCategory = baseCategory == "gde" ? "gpe" : "gp";
+      if (category != expectedCategory)
+      {
+        problems.Add($"CATEGORY is {category}; a patch of a {baseCategory} application has CATEGORY {expectedCategory}.");
+      }
+      var version = sfo["VERSION"]?.ToString();
+      var baseVersion = baseSfo["VERSION"]?.ToString();
+      if (version != baseVersion)
+      {
+        problems.Add($"VERSION is {version}; a patch keeps its application's VERSION ({baseVersion}).");
+      }
+      var appVer = sfo["APP_VER"]?.ToString();
+      var baseAppVer = baseSfo["APP_VER"]?.ToString();
+      var versionFormat = new Regex(@"^\d{2}\.\d{2}$");
+      if (appVer != null && baseAppVer != null && versionFormat.IsMatch(appVer) && versionFormat.IsMatch(baseAppVer)
+        && string.CompareOrdinal(appVer, baseAppVer) <= 0)
+      {
+        problems.Add($"APP_VER is {appVer}; a patch needs an APP_VER above its application's ({baseAppVer}).");
+      }
+      if (problems.Count == 0)
+        return null;
+      return ValidateResult.Warning("Patch param.sfo: " + string.Join(" ", problems));
+    }
     private static List<Func<Gp4Project, string, ParamSfo, ValidateResult>> sfoChecks = new List<Func<Gp4Project, string, ParamSfo, ValidateResult>>()
     {
       checkContentIdMatchesSfo,
       checkContentIdMatchesTitleIdSfo,
-      checkCategoryMatchesPkgType
+      checkCategoryMatchesPkgType,
+      checkPatchSfoMatchesBase,
     };
 
     public static List<ValidateResult> ValidateProject(Gp4Project proj, string projDir)

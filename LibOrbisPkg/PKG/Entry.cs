@@ -345,6 +345,10 @@ namespace LibOrbisPkg.PKG
     }
   }
 
+  /// <summary>
+  /// The digests in the GENERAL_DIGESTS entry. Each flag is the entry's set-digests mask bit,
+  /// and the digest with bit (1 &lt;&lt; n) is stored at offset 0x20 * n of the entry.
+  /// </summary>
   [Flags]
   public enum GeneralDigest : int
   {
@@ -358,10 +362,19 @@ namespace LibOrbisPkg.PKG
     PlaygoDigest = 1 << 7,
     TrophyDigest = 1 << 8,
     ManualDigest = 1 << 9,
-    KeymapDigest = 1 << 10,
-    OriginDigest = 1 << 11,
-    TargetDigest = 1 << 12,
-    OriginGameDigest = 1 << 13,
+    /// <summary>
+    /// In a patch: the base application package's ContentDigest (offset 0x140).
+    /// Cumulative patches made by the official tools set this bit, and the console refuses a patch
+    /// without it (0x80F00611) or with another package's digest (0x80F00612). Was named KeymapDigest.
+    /// </summary>
+    OriginDigest = 1 << 10,
+    Unknown_x800 = 1 << 11, // Was named OriginDigest; not seen set.
+    /// <summary>
+    /// In a patch: the base application package's GameDigest, its PFS image digest (offset 0x180).
+    /// Set together with <see cref="OriginDigest"/>. Was named TargetDigest.
+    /// </summary>
+    OriginGameDigest = 1 << 12,
+    Unknown_x2000 = 1 << 13, // Was named OriginGameDigest; not seen set.
     TargetGameDigest = 1 << 14,
   }
   /// <summary>
@@ -383,10 +396,10 @@ namespace LibOrbisPkg.PKG
       { GeneralDigest.PlaygoDigest, new byte[32] },
       { GeneralDigest.TrophyDigest, new byte[32] },
       { GeneralDigest.ManualDigest, new byte[32] },
-      { GeneralDigest.KeymapDigest, new byte[32] },
       { GeneralDigest.OriginDigest, new byte[32] },
-      { GeneralDigest.TargetDigest, new byte[32] },
+      { GeneralDigest.Unknown_x800, new byte[32] },
       { GeneralDigest.OriginGameDigest, new byte[32] },
+      { GeneralDigest.Unknown_x2000, new byte[32] },
       { GeneralDigest.TargetGameDigest, new byte[32] },
     };
 
@@ -409,22 +422,11 @@ namespace LibOrbisPkg.PKG
       s.WriteUInt16BE(type);
       s.Position += 24;
       s.WriteInt32BE((int)set_digests);
-      s.Write(Digests[GeneralDigest.ContentDigest], 0, 32); 
-      s.Write(Digests[GeneralDigest.GameDigest], 0, 32); 
-      s.Write(Digests[GeneralDigest.HeaderDigest], 0, 32); 
-      s.Write(Digests[GeneralDigest.SystemDigest], 0, 32); 
-      s.Write(Digests[GeneralDigest.MajorParamDigest], 0, 32); 
-      s.Write(Digests[GeneralDigest.ParamDigest], 0, 32);
-      if(type > 0x100)
+      // The digest with mask bit (1 << n) is at offset 0x20 * n; type 0x100 has room for
+      // the first 11 digests, type 0x101 (patches) for 13, and larger types for 14.
+      for (var n = 1; 0x20 * (n + 1) <= Length; n++)
       {
-        s.Write(Digests[GeneralDigest.PlaygoDigest], 0, 32);
-        s.Write(Digests[GeneralDigest.TrophyDigest], 0, 32);
-        s.Write(Digests[GeneralDigest.ManualDigest], 0, 32);
-        s.Write(Digests[GeneralDigest.KeymapDigest], 0, 32);
-      }
-      else
-      {
-        s.Position += 0xA0;
+        s.Write(Digests[(GeneralDigest)(1 << n)], 0, 32);
       }
     }
 
@@ -435,9 +437,9 @@ namespace LibOrbisPkg.PKG
       ret.type = s.ReadUInt16BE();
       s.Position += 24;
       ret.set_digests = (GeneralDigest)s.ReadUInt32BE();
-      for(var d = GeneralDigest.ContentDigest; (int)d < 1 << 15; d = (GeneralDigest)((int)d << 1))
+      for (var n = 1; 0x20 * (n + 1) <= ret.Length; n++)
       {
-        s.Read(ret.Digests[d], 0, 32);
+        s.Read(ret.Digests[(GeneralDigest)(1 << n)], 0, 32);
       }
       return ret;
     }

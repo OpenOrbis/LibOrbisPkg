@@ -35,6 +35,7 @@
     <Compile Include="..\LibOrbisPkg\PFS\XtsDecryptReader.cs" Link="PFS\XtsDecryptReader.cs" />
     <Compile Include="..\LibOrbisPkg\PKG\Entry.cs" Link="PKG\Entry.cs" />
     <Compile Include="..\LibOrbisPkg\PKG\Enums.cs" Link="PKG\Enums.cs" />
+    <Compile Include="..\LibOrbisPkg\PKG\PatchBase.cs" Link="PKG\PatchBase.cs" />
     <Compile Include="..\LibOrbisPkg\PKG\Pkg.cs" Link="PKG\Pkg.cs" />
     <Compile Include="..\LibOrbisPkg\PKG\PkgBuilder.cs" Link="PKG\PkgBuilder.cs" />
     <Compile Include="..\LibOrbisPkg\PKG\PkgProperties.cs" Link="PKG\PkgProperties.cs" />

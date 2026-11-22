@@ -78,10 +78,19 @@ namespace LibOrbisPkg.PKG
     }
 
     private Pkg pkg;
-    public PkgValidator(Pkg pkg)
+    private PatchBase patchBase;
+
+    /// <param name="pkg">The package to check</param>
+    /// <param name="patchBase">For a patch: the application package it should apply to, to check the
+    /// origin digests and app/playgo-chunk.dat against; without it those are not checked</param>
+    public PkgValidator(Pkg pkg, PatchBase patchBase = null)
     {
       this.pkg = pkg;
+      this.patchBase = patchBase;
     }
+
+    private bool IsCumulativePatch =>
+      (pkg.Header.content_flags & ContentFlags.CUMULATIVE_PATCH) == ContentFlags.CUMULATIVE_PATCH;
 
     private Dictionary<GeneralDigest, Tuple<string, string>> GeneralDigests =
       new Dictionary<GeneralDigest, Tuple<string, string>> {
@@ -112,17 +121,17 @@ namespace LibOrbisPkg.PKG
         { GeneralDigest.ManualDigest,
           Tuple.Create("Manual Digest",
             "???") },
-        { GeneralDigest.KeymapDigest,
-          Tuple.Create("Keymap Digest",
-            "???") },
         { GeneralDigest.OriginDigest,
           Tuple.Create("Origin Digest",
-            "???") },
-        { GeneralDigest.TargetDigest,
-          Tuple.Create("Target Digest",
+            "In a patch: the Content Digest of the application package it applies to") },
+        { GeneralDigest.Unknown_x800,
+          Tuple.Create("Unknown Digest 0x800",
             "???") },
         { GeneralDigest.OriginGameDigest,
           Tuple.Create("Origin Game Digest",
+            "In a patch: the Game Digest (PFS image digest) of the application package it applies to") },
+        { GeneralDigest.Unknown_x2000,
+          Tuple.Create("Unknown Digest 0x2000",
             "???") },
         { GeneralDigest.TargetGameDigest,
           Tuple.Create("Target Game Digest",
@@ -175,11 +184,24 @@ namespace LibOrbisPkg.PKG
             validation.Validate = () =>
               CheckHashes(pkg.GeneralDigests.Digests[GeneralDigest.ParamDigest], Crypto.Sha256(pkg.ParamSfo.ParamSfo.Serialize()));
             break;
+          case GeneralDigest.OriginDigest when patchBase != null:
+            validation.Validate = () =>
+              CheckHashes(pkg.GeneralDigests.Digests[GeneralDigest.OriginDigest], patchBase.ContentDigest);
+            break;
+          case GeneralDigest.OriginGameDigest when patchBase != null:
+            validation.Validate = () =>
+              CheckHashes(pkg.GeneralDigests.Digests[GeneralDigest.OriginGameDigest], patchBase.GameDigest);
+            break;
           default:
             // Don't know how to compute other hashes, so skip them.
             continue;
         }
         validations.Add(validation);
+      }
+
+      if (IsCumulativePatch)
+      {
+        AddPatchValidations(validations, pkgStream);
       }
 
       var digests = pkg.Digests;
@@ -335,6 +357,51 @@ namespace LibOrbisPkg.PKG
       }
 
       return validations;
+    }
+
+    /// <summary>
+    /// What the console needs in a cumulative patch besides the patch content flags.
+    /// </summary>
+    private void AddPatchValidations(List<Validation> validations, Stream pkgStream)
+    {
+      bool Has(EntryId id) => pkg.Metas.Metas.Any(m => m.id == id);
+      validations.Add(new Validation(
+        ValidationType.Limit,
+        "Patch Entries",
+        "A cumulative patch has an app/playgo-chunk.dat entry and no LICENSE_DAT or LICENSE_INFO entries",
+        pkg.Header.entry_table_offset)
+      {
+        Validate = () =>
+          Has(EntryId.APP__PLAYGO_CHUNK_DAT) && !Has(EntryId.LICENSE_DAT) && !Has(EntryId.LICENSE_INFO)
+            ? ValidationResult.Ok : ValidationResult.Fail
+      });
+      validations.Add(new Validation(
+        ValidationType.Limit,
+        "Patch Origin Digests",
+        "A cumulative patch's general digests (type 0x101) hold its application's Content Digest and Game Digest",
+        pkg.GeneralDigests.meta.DataOffset)
+      {
+        Validate = () =>
+          pkg.GeneralDigests.type == 0x101
+          && pkg.GeneralDigests.set_digests.HasFlag(GeneralDigest.OriginDigest)
+          && pkg.GeneralDigests.set_digests.HasFlag(GeneralDigest.OriginGameDigest)
+            ? ValidationResult.Ok : ValidationResult.Fail
+      });
+      var chunkDat = pkg.Metas.Metas.FirstOrDefault(m => m.id == EntryId.APP__PLAYGO_CHUNK_DAT);
+      if (patchBase != null && chunkDat != null)
+      {
+        validations.Add(new Validation(
+          ValidationType.Hash,
+          "Patch app/playgo-chunk.dat",
+          "A cumulative patch's app/playgo-chunk.dat is its application's playgo-chunk.dat",
+          chunkDat.DataOffset)
+        {
+          Validate = () =>
+            patchBase.PlaygoChunkDat != null
+              ? CheckHashes(Crypto.Sha256(patchBase.PlaygoChunkDat), Crypto.Sha256(pkgStream, chunkDat.DataOffset, chunkDat.DataSize))
+              : ValidationResult.Fail
+        });
+      }
     }
 
     /// <summary>

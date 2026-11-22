@@ -57,12 +57,18 @@ namespace PkgTool
         }),
       Verb.Create(
         "pkg_build",
-        "Builds a fake PKG from the given GP4 project in the given output directory.",
-        ArgDef.Required("input_project.gp4", "output_directory"),
-        args =>
+        "Builds a fake PKG from the given GP4 project in the given output directory. " +
+          "For a patch project (pkg_ps4_patch), --base names the application package that the patch applies to " +
+          "(instead of app_path in the project); the patch is written as <content_id>-patch.pkg.",
+        ArgDef.Multi(ArgDef.Option("base"), "input_project.gp4", "output_directory"),
+        (_, optionals, args) =>
         {
           var proj = args[1];
           var project = Gp4Project.ReadFrom(File.OpenRead(proj));
+          if (optionals["base"] != null)
+          {
+            project.volume.Package.AppPath = Path.GetFullPath(optionals["base"]);
+          }
           var validation = Gp4Validator.ValidateProject(project, Path.GetDirectoryName(proj));
           bool ok = true;
           if (validation.Count > 0)
@@ -87,9 +93,11 @@ namespace PkgTool
           }
           var props = PkgProperties.FromGp4(project, Path.GetDirectoryName(proj));
           var outputPath = args[2];
+          // A patch has its base's content ID, so it gets its own name next to the base.
+          var suffix = project.volume.Type == VolumeType.pkg_ps4_patch ? "-patch" : "";
           new PkgBuilder(props).Write(Path.Combine(
             outputPath,
-            $"{project.volume.Package.ContentId}.pkg"));
+            $"{project.volume.Package.ContentId}{suffix}.pkg"));
         }),
       Verb.Create(
         "pkg_makegp4",
@@ -356,14 +364,16 @@ namespace PkgTool
         }),
       Verb.Create(
         "pkg_validate",
-        "Checks the hashes and signatures of a PKG.",
-        ArgDef.Multi(ArgDef.Bool("verbose"), "input.pkg"),
-        (option, args) =>
+        "Checks the hashes and signatures of a PKG. For a patch, --base names the application package " +
+          "that the patch should apply to, to check the patch's origin digests against it.",
+        ArgDef.Multi(ArgDef.Bool("verbose"), ArgDef.Option("base"), "input.pkg"),
+        (option, optionals, args) =>
         {
           using(var fs = File.OpenRead(args[1]))
           {
             var pkg = new PkgReader(fs).ReadPkg();
-            var validator = new PkgValidator(pkg);
+            var patchBase = optionals["base"] != null ? PatchBase.Read(optionals["base"]) : null;
+            var validator = new PkgValidator(pkg, patchBase);
             foreach(var validation in validator.Validations(fs))
             {
               switch(validation.Validate())
